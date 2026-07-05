@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scanerrific — A Partnership Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF9;
+    --surface: #FFFFFF;
+    --fg: #0F0F0F;
+    --muted: #6B6B6B;
+    --faint: #A8A8A5;
+    --border: #E7E5E1;
+    --border-strong: #D4D2CD;
+    --accent: #7C4A1E;
+    --accent-hover: #5D3814;
+    --accent-soft: #F0E7DC;
+    --f-display: 'Fraunces', Georgia, serif;
+    --f-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+
+  /* Progress hairline */
+  .progress {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: var(--border);
+    z-index: 100;
+  }
+  .progress::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    height: 1px;
+    background: var(--accent);
+    width: var(--pct, 5%);
+    transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 48px 80px 40px;
+    background: var(--bg);
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .slide.active { visibility: visible; pointer-events: auto; }
+
+  /* Slide chrome */
+  .slide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--faint);
+    text-transform: uppercase;
+  }
+  .slide-header .brand { color: var(--fg); font-weight: 500; }
+  .slide-header .batch { color: var(--accent); }
+
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 1120px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 24px 0;
+    overflow: hidden;
+  }
+
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--faint);
+    text-transform: uppercase;
+  }
+
+  /* Typography */
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow-num { color: var(--accent); }
+  .eyebrow-rule { flex: 0 0 24px; height: 1px; background: var(--border-strong); }
+
+  h1.display {
+    font-family: var(--f-display);
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-size: clamp(56px, 6vw, 92px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    max-width: 20ch;
+  }
+  h1.display.big {
+    font-size: clamp(72px, 7.5vw, 130px);
+    letter-spacing: -0.03em;
+  }
+  h1.display em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--accent);
+  }
+
+  h2.headline {
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: clamp(38px, 4vw, 60px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    max-width: 22ch;
+    margin-bottom: 32px;
+  }
+  h2.headline em { font-style: italic; color: var(--accent); font-weight: 300; }
+
+  .lede {
+    font-family: var(--f-body);
+    font-weight: 300;
+    font-size: 21px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 55ch;
+    margin-top: 20px;
+  }
+
+  .body-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 58ch;
+  }
+
+  .caption {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--faint);
+    font-style: italic;
+    max-width: 55ch;
+    margin-top: 20px;
+  }
+
+  /* Feature list */
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 62ch;
+  }
+  .feature-list li {
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    gap: 16px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--fg);
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .feature-list li:last-child { border-bottom: none; }
+  .feature-list li::before {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 5px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-top: 9px;
+  }
+
+  /* Workflow */
+  .workflow {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 48px;
+    margin-top: 8px;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-strong);
+  }
+  .step-num {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    padding-top: 3px;
+  }
+  .step-content { display: flex; flex-direction: column; gap: 4px; }
+  .step-title {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.15;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+  .step-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+
+  /* Title slide */
+  .title-slide .slide-body { justify-content: space-between; }
+  .title-slide .title-top { display: flex; flex-direction: column; gap: 8px; }
+  .title-slide .title-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+  }
+  .title-slide .col { display: flex; flex-direction: column; gap: 4px; }
+  .title-slide .col-label {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .title-slide .col-value {
+    font-size: 14px;
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  /* Statement slides */
+  .statement-slide .slide-body { justify-content: center; }
+  .statement {
+    font-family: var(--f-display);
+    font-weight: 300;
+    font-size: clamp(48px, 5.4vw, 88px);
+    line-height: 1.04;
+    letter-spacing: -0.025em;
+    color: var(--fg);
+    max-width: 20ch;
+  }
+  .statement em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  .statement-sub {
+    font-family: var(--f-body);
+    font-weight: 300;
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 50ch;
+    margin-top: 36px;
+  }
+  .statement-mark {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .statement-mark::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  /* Quote slide */
+  .quote-slide .slide-body { justify-content: center; }
+  .quote-block {
+    max-width: 42ch;
+    padding-left: 36px;
+    border-left: 2px solid var(--accent);
+    margin: 0 auto;
+  }
+  .quote-text {
+    font-family: var(--f-display);
+    font-weight: 300;
+    font-style: italic;
+    font-size: clamp(22px, 2.2vw, 32px);
+    line-height: 1.35;
+    color: var(--fg);
+    letter-spacing: -0.005em;
+  }
+  .quote-attr {
+    font-family: var(--f-body);
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    max-width: 40ch;
+  }
+  .quote-attr strong {
+    color: var(--fg);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+
+  /* Case card */
+  .case-card {
+    border: 1px solid var(--border-strong);
+    padding: 32px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 48px;
+    background: var(--surface);
+    margin-top: 8px;
+  }
+  .case-brand { display: flex; flex-direction: column; gap: 16px; }
+  .case-logo {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: 34px;
+    color: var(--fg);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .case-tag {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .case-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .case-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+  .case-meta-label {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 3px;
+  }
+  .case-meta-value {
+    font-size: 12px;
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .case-uses { display: flex; flex-direction: column; gap: 12px; }
+  .case-use-title {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .case-use {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--fg);
+  }
+  .case-use-num {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--accent);
+    padding-top: 2px;
+  }
+
+  /* Metrics grid */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 24px;
+    border-top: 1px solid var(--border-strong);
+  }
+  .metric {
+    padding: 28px 24px 0 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .metric:last-child { border-right: none; }
+  .metric-num {
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: clamp(48px, 5vw, 68px);
+    line-height: 0.95;
+    color: var(--fg);
+    letter-spacing: -0.03em;
+  }
+  .metric-num .unit {
+    font-size: 22px;
+    color: var(--muted);
+    margin-left: 2px;
+    font-weight: 400;
+  }
+  .metric-num .sign {
+    font-size: 32px;
+    color: var(--accent);
+    margin-right: 2px;
+    font-weight: 400;
+  }
+  .metric-label {
+    font-family: var(--f-body);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+    max-width: 24ch;
+    margin-top: 8px;
+  }
+
+  /* ROI table */
+  .roi-table {
+    margin-top: 8px;
+    border-top: 1px solid var(--border-strong);
+  }
+  .roi-row {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: baseline;
+  }
+  .roi-label {
+    font-size: 15px;
+    color: var(--fg);
+  }
+  .roi-label small {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .roi-value {
+    font-family: var(--f-mono);
+    font-size: 18px;
+    color: var(--fg);
+    font-weight: 500;
+    text-align: right;
+  }
+  .roi-row.total {
+    border-bottom: none;
+    border-top: 1px solid var(--fg);
+    margin-top: 4px;
+    padding-top: 20px;
+  }
+  .roi-row.total .roi-label {
+    font-family: var(--f-display);
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .roi-row.total .roi-value {
+    font-family: var(--f-display);
+    font-size: 32px;
+    color: var(--accent);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .roi-row.cost .roi-value { color: var(--muted); }
+
+  /* Person card - Nikolay */
+  .person-card {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 40px;
+    align-items: start;
+    margin-top: 16px;
+  }
+  .person-avatar {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: 64px;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+  }
+  .person-details {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .person-name {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: clamp(36px, 3.6vw, 48px);
+    color: var(--fg);
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .person-role {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .person-bio {
+    font-size: 15px;
+    color: var(--fg);
+    line-height: 1.6;
+    max-width: 60ch;
+  }
+  .person-bio + .person-bio {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Before / After split */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 16px;
+    border: 1px solid var(--border-strong);
+  }
+  .split-col {
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .split-col.before {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+  .split-col.after { background: var(--accent-soft); }
+  .split-eyebrow {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .split-col.after .split-eyebrow {
+    color: var(--accent);
+    border-color: rgba(124,74,30,0.2);
+  }
+  .split-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .split-list li {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--fg);
+    padding-left: 18px;
+    position: relative;
+  }
+  .split-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 8px;
+    height: 1px;
+    background: var(--muted);
+  }
+  .split-col.after .split-list li::before { background: var(--accent); }
+
+  /* Wins - 3 col */
+  .wins {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 24px;
+  }
+  .win {
+    padding: 20px 28px 8px 28px;
+    border-left: 1px solid var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .win:first-child { border-left: none; padding-left: 0; }
+  .win-tag {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .win-title {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: 24px;
+    line-height: 1.15;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+  .win-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Price card */
+  .price-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px 36px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 32px;
+  }
+  .price-card .price {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: 64px;
+    line-height: 1;
+    color: var(--fg);
+    letter-spacing: -0.03em;
+  }
+  .price-card .price sup {
+    font-size: 22px;
+    top: -0.5em;
+    position: relative;
+    font-weight: 400;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+  .price-detail {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.7;
+  }
+  .price-detail strong {
+    color: var(--fg);
+    display: block;
+    font-weight: 500;
+  }
+
+  /* Contact block */
+  .contact {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+  .contact-label {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 6px;
+  }
+  .contact-value {
+    font-size: 13px;
+    color: var(--fg);
+    line-height: 1.5;
+  }
+
+  /* Navigation */
+  .nav {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: rgba(250, 250, 249, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    z-index: 50;
+    opacity: 0.35;
+    transition: opacity 200ms ease;
+  }
+  .nav:hover { opacity: 1; }
+  .nav-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-radius: 4px;
+    transition: all 150ms ease;
+  }
+  .nav-btn:hover { color: var(--fg); background: var(--accent-soft); }
+  .dots { display: flex; gap: 5px; padding: 0 6px; }
+  .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .dot:hover { background: var(--muted); }
+  .dot.active { background: var(--accent); transform: scale(1.5); }
+  .nav-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border-strong);
+    margin: 0 2px;
+  }
+  .counter {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 0 4px;
+  }
+
+  /* ── Dense slides (17–20): too much content for 100vh, so compact everything ── */
+  [data-slide="17"],
+  [data-slide="18"],
+  [data-slide="19"],
+  [data-slide="20"] {
+    padding-top: 28px;
+    padding-bottom: 24px;
+  }
+  [data-slide="17"] .slide-body,
+  [data-slide="18"] .slide-body,
+  [data-slide="19"] .slide-body,
+  [data-slide="20"] .slide-body {
+    justify-content: flex-start;
+    padding: 12px 0;
+  }
+
+  /* Slide 17 – ROI */
+  [data-slide="17"] .headline { margin-bottom: 10px; font-size: clamp(28px, 3vw, 44px); }
+  [data-slide="17"] .body-text { font-size: 14px; margin-bottom: 10px; }
+  [data-slide="17"] .roi-table { margin-top: 4px; }
+  [data-slide="17"] .roi-row { padding: 9px 0; }
+  [data-slide="17"] .roi-row.total { padding-top: 12px; }
+  [data-slide="17"] .roi-row.total .roi-value { font-size: 26px; }
+  [data-slide="17"] .roi-label { font-size: 13px; }
+  [data-slide="17"] .roi-label small { font-size: 11px; }
+  [data-slide="17"] .roi-value { font-size: 15px; }
+  [data-slide="17"] .caption { margin-top: 10px; font-size: 12px; }
+
+  /* Slide 18 – Transformation */
+  [data-slide="18"] .headline { margin-bottom: 10px; font-size: clamp(28px, 3vw, 44px); }
+  [data-slide="18"] .split { margin-top: 8px; }
+  [data-slide="18"] .split-col { padding: 14px 24px; gap: 8px; }
+  [data-slide="18"] .split-eyebrow { padding-bottom: 8px; }
+  [data-slide="18"] .split-list { gap: 6px; }
+  [data-slide="18"] .split-list li { font-size: 13px; line-height: 1.4; }
+  [data-slide="18"] .wins { margin-top: 10px; }
+  [data-slide="18"] .win { padding: 10px 20px 4px 20px; gap: 6px; }
+  [data-slide="18"] .win-title { font-size: 20px; }
+  [data-slide="18"] .win-desc { font-size: 12px; }
+
+  /* Slide 19 – Pilot */
+  [data-slide="19"] .headline { font-size: clamp(26px, 2.8vw, 42px); margin-bottom: 20px; }
+  [data-slide="19"] .feature-list { gap: 8px; }
+  [data-slide="19"] .feature-list li { padding-bottom: 8px; font-size: 14px; }
+  [data-slide="19"] .price-card { margin-top: 14px; padding: 20px 28px; }
+  [data-slide="19"] .price-card .price { font-size: 52px; }
+
+  /* Slide 20 – Let's Begin */
+  [data-slide="20"] .display { font-size: clamp(36px, 4vw, 60px); }
+  [data-slide="20"] .lede { font-size: 17px; margin-top: 10px; }
+  [data-slide="20"] .workflow { margin-top: 16px; gap: 16px 40px; }
+  [data-slide="20"] .step { padding-top: 12px; }
+  [data-slide="20"] .step-title { font-size: 16px; }
+  [data-slide="20"] .step-desc { font-size: 12px; }
+  [data-slide="20"] .contact { margin-top: 16px; padding-top: 16px; gap: 24px; }
+  [data-slide="20"] .contact-value { font-size: 12px; }
+
+  /* Slide 17 · Risk frame components */
+  .risk-frame {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 0;
+    border: 1px solid var(--border-strong);
+    margin-top: 10px;
+  }
+  .risk-panel {
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .risk-panel.proof {
+    background: var(--accent-soft);
+    border-right: 1px solid rgba(124,74,30,0.2);
+  }
+  .risk-panel.exposure { background: var(--surface); }
+  .risk-panel-label {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(124,74,30,0.2);
+  }
+  .risk-panel.exposure .risk-panel-label {
+    color: var(--muted);
+    border-bottom-color: var(--border);
+  }
+  .risk-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .risk-list li {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--fg);
+    padding-left: 16px;
+    position: relative;
+  }
+  .risk-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 6px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .risk-panel-caption {
+    font-family: var(--f-display);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid rgba(124,74,30,0.15);
+  }
+  .incident-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .incident-table th {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    text-align: left;
+    padding: 0 10px 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .incident-table td {
+    padding: 7px 10px 7px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg);
+    font-size: 12px;
+    line-height: 1.3;
+    vertical-align: top;
+  }
+  .incident-table tr:last-child td { border-bottom: none; }
+  .incident-table td:nth-child(2) {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .incident-table td:nth-child(3) {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .risk-bottom {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 24px;
+    align-items: center;
+    padding: 14px 22px;
+    background: var(--fg);
+  }
+  .risk-callout {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    white-space: nowrap;
+    border-right: 1px solid rgba(255,255,255,0.12);
+    padding-right: 24px;
+  }
+  .risk-price {
+    font-family: var(--f-display);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--bg);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .risk-vs {
+    font-family: var(--f-mono);
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(250,250,249,0.4);
+    margin: 3px 0 2px;
+  }
+  .risk-incident {
+    font-size: 11px;
+    color: rgba(250,250,249,0.6);
+  }
+  .risk-quote {
+    font-family: var(--f-display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.4;
+    color: rgba(250,250,249,0.88);
+    letter-spacing: -0.005em;
+  }
+  .risk-disclaimer {
+    font-size: 10px;
+    color: var(--faint);
+    line-height: 1.5;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* ── Slide transitions & content animations ── */
+  @keyframes slideEnterRight {
+    from { opacity: 0; transform: translateX(60px) scale(0.982); }
+    to   { opacity: 1; transform: translateX(0)    scale(1); }
+  }
+  @keyframes slideEnterLeft {
+    from { opacity: 0; transform: translateX(-60px) scale(0.982); }
+    to   { opacity: 1; transform: translateX(0)     scale(1); }
+  }
+  @keyframes contentFadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide.active.forward  { animation: slideEnterRight 500ms cubic-bezier(0.22,1,0.36,1) both; }
+  .slide.active.backward { animation: slideEnterLeft  500ms cubic-bezier(0.22,1,0.36,1) both; }
+
+  /* Content entrance — staggered */
+  .slide.active .eyebrow,
+  .slide.active .statement-mark {
+    animation: contentFadeUp 500ms 60ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .slide.active h1.display,
+  .slide.active h2.headline,
+  .slide.active .statement {
+    animation: contentFadeUp 540ms 140ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .slide.active .lede,
+  .slide.active .statement-sub,
+  .slide.active .quote-block {
+    animation: contentFadeUp 540ms 240ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .slide.active .body-text {
+    animation: contentFadeUp 500ms 260ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .slide.active .two-col,
+  .slide.active .workflow,
+  .slide.active .metrics,
+  .slide.active .split,
+  .slide.active .case-card,
+  .slide.active .person-card,
+  .slide.active .risk-frame,
+  .slide.active .feature-list {
+    animation: contentFadeUp 540ms 300ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .slide.active .wins,
+  .slide.active .contact,
+  .slide.active .price-card,
+  .slide.active .risk-bottom {
+    animation: contentFadeUp 540ms 400ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .slide.active .caption,
+  .slide.active .risk-disclaimer,
+  .slide.active .title-meta {
+    animation: contentFadeUp 480ms 480ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide.active.forward, .slide.active.backward,
+    .slide.active .eyebrow, .slide.active .statement-mark,
+    .slide.active h1.display, .slide.active h2.headline, .slide.active .statement,
+    .slide.active .lede, .slide.active .statement-sub, .slide.active .quote-block,
+    .slide.active .body-text, .slide.active .two-col, .slide.active .workflow,
+    .slide.active .metrics, .slide.active .split, .slide.active .case-card,
+    .slide.active .person-card, .slide.active .risk-frame, .slide.active .feature-list,
+    .slide.active .wins, .slide.active .contact, .slide.active .price-card,
+    .slide.active .risk-bottom, .slide.active .caption,
+    .slide.active .risk-disclaimer, .slide.active .title-meta {
+      animation: none;
+    }
+  }
+
+  /* ── Print: each slide = one A4 page, Safari-quality ── */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  @media print {
+    html, body {
+      background: var(--bg);
+      overflow: visible;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .deck { width: auto; height: auto; overflow: visible; }
+    .slide {
+      position: relative !important;
+      display: flex !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      animation: none !important;
+      opacity: 1 !important;
+      page-break-after: always;
+      page-break-inside: avoid;
+      height: 297mm;
+      padding: 32px 40px 28px;
+      overflow: hidden;
+    }
+    .slide .slide-body { justify-content: center; padding: 8px 0; overflow: visible; }
+    .nav, .progress { display: none; }
+    .slide-header { font-size: 9px; }
+    .slide-footer { font-size: 9px; }
+
+    /* Typography for print */
+    .slide h1.display { font-size: 56px; line-height: 1; }
+    .slide h1.display.big { font-size: 64px; }
+    .slide h2.headline { font-size: 32px; margin-bottom: 16px; }
+    .slide .lede { font-size: 16px; margin-top: 12px; }
+    .slide .eyebrow { margin-bottom: 16px; font-size: 9px; }
+    .slide .body-text { font-size: 13px; }
+    .slide .caption { font-size: 11px; margin-top: 12px; }
+    .slide .statement { font-size: 48px; }
+    .slide .statement-sub { font-size: 16px; margin-top: 20px; }
+    .slide .statement-mark { margin-bottom: 24px; }
+    .slide .quote-text { font-size: 22px; }
+    .slide .quote-attr { margin-top: 20px; padding-top: 12px; }
+    .slide .feature-list { gap: 8px; }
+    .slide .feature-list li { font-size: 13px; padding-bottom: 8px; gap: 12px; }
+    .slide .two-col { gap: 32px; }
+    .slide .workflow { gap: 12px 32px; margin-top: 4px; }
+    .slide .step { padding-top: 10px; gap: 12px; }
+    .slide .step-title { font-size: 16px; }
+    .slide .step-desc { font-size: 12px; }
+    .slide .metrics { margin-top: 8px; }
+    .slide .metric { padding: 16px 16px 0 0; }
+    .slide .metric-num { font-size: 40px; }
+    .slide .metric-num .unit { font-size: 16px; }
+    .slide .metric-num .sign { font-size: 24px; }
+    .slide .metric-label { font-size: 11px; }
+    .slide .roi-row { padding: 8px 0; }
+    .slide .roi-label { font-size: 12px; }
+    .slide .roi-value { font-size: 14px; }
+    .slide .roi-row.total .roi-value { font-size: 22px; }
+    .slide .roi-row.total .roi-label { font-size: 16px; }
+
+    /* Case card */
+    .slide .case-card { padding: 20px 24px; gap: 28px; margin-top: 4px; }
+    .slide .case-logo { font-size: 26px; }
+    .slide .case-desc { font-size: 12px; }
+    .slide .case-meta { gap: 8px 16px; padding-top: 12px; }
+    .slide .case-meta-value { font-size: 11px; }
+    .slide .case-use { font-size: 12px; gap: 10px; }
+    .slide .case-use-title { font-size: 9px; }
+
+    /* Person card */
+    .slide .person-card { grid-template-columns: 120px 1fr; gap: 24px; margin-top: 8px; }
+    .slide .person-avatar { width: 120px; height: 120px; font-size: 44px; }
+    .slide .person-name { font-size: 28px; }
+    .slide .person-role { font-size: 10px; }
+    .slide .person-bio { font-size: 12px; line-height: 1.45; }
+    .slide .person-bio + .person-bio { font-size: 12px; }
+
+    /* Split / Before-After */
+    .slide .split { margin-top: 8px; }
+    .slide .split-col { padding: 16px 20px; gap: 10px; }
+    .slide .split-list li { font-size: 12px; }
+    .slide .split-eyebrow { font-size: 9px; }
+    .slide .wins { margin-top: 12px; }
+    .slide .win { padding: 10px 16px 4px 16px; gap: 6px; }
+    .slide .win-title { font-size: 17px; }
+    .slide .win-desc { font-size: 11px; }
+    .slide .win-tag { font-size: 9px; }
+
+    /* Risk frame */
+    .slide .risk-frame { margin-top: 6px; }
+    .slide .risk-panel { padding: 12px 16px; gap: 6px; }
+    .slide .risk-list li { font-size: 11px; }
+    .slide .incident-table td { font-size: 10px; padding: 4px 8px 4px 0; }
+    .slide .incident-table th { font-size: 8px; }
+    .slide .risk-bottom { padding: 10px 16px; margin-top: 6px; }
+    .slide .risk-price { font-size: 20px; }
+    .slide .risk-quote { font-size: 12px; }
+    .slide .risk-disclaimer { font-size: 9px; margin-top: 4px; }
+
+    /* Price card */
+    .slide .price-card { padding: 16px 20px; margin-top: 10px; }
+    .slide .price-card .price { font-size: 40px; }
+
+    /* Contact */
+    .slide .contact { margin-top: 16px; padding-top: 12px; gap: 20px; }
+    .slide .contact-label { font-size: 9px; }
+    .slide .contact-value { font-size: 11px; }
+
+    /* Dense slides (17-20) further compacted for print */
+    [data-slide="17"],
+    [data-slide="18"],
+    [data-slide="19"],
+    [data-slide="20"] { padding: 20px 32px 16px; }
+    [data-slide="17"] .headline { font-size: 24px; margin-bottom: 6px; }
+    [data-slide="17"] .roi-row { padding: 5px 0; }
+    [data-slide="17"] .roi-label { font-size: 11px; }
+    [data-slide="17"] .roi-row.total .roi-value { font-size: 18px; }
+    [data-slide="18"] .headline { font-size: 24px; margin-bottom: 8px; }
+    [data-slide="18"] .split-col { padding: 10px 16px; gap: 6px; }
+    [data-slide="18"] .split-list li { font-size: 11px; }
+    [data-slide="18"] .win-title { font-size: 15px; }
+    [data-slide="18"] .win-desc { font-size: 10px; }
+    [data-slide="19"] .headline { font-size: 22px; margin-bottom: 10px; }
+    [data-slide="19"] .feature-list li { font-size: 12px; padding-bottom: 6px; }
+    [data-slide="19"] .price-card { margin-top: 8px; padding: 12px 16px; }
+    [data-slide="19"] .price-card .price { font-size: 34px; }
+    [data-slide="20"] .display { font-size: 36px; }
+    [data-slide="20"] .lede { font-size: 14px; }
+    [data-slide="20"] .step-title { font-size: 14px; }
+    [data-slide="20"] .step-desc { font-size: 11px; }
+    [data-slide="20"] .workflow { gap: 8px 24px; }
+  }
+
+  @media (max-width: 1000px) {
+    .slide { padding: 32px 28px 24px; }
+    .two-col, .workflow, .metrics, .wins, .split, .case-card, .person-card, .contact {
+      grid-template-columns: 1fr; gap: 20px;
+    }
+    .price-card { flex-direction: column; align-items: flex-start; }
+    .price-detail { text-align: left; }
+    .win, .metric { border-left: none; border-right: none; padding: 12px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck">
+
+  <!-- 01 · TITLE -->
+  <section class="slide active title-slide" data-slide="1">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.01 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="title-top">
+        <div class="eyebrow">
+          <span class="eyebrow-num">01</span>
+          <span class="eyebrow-rule"></span>
+          <span>A Partnership Proposal · March 2026</span>
+        </div>
+        <h1 class="display big">Scanerrific <em>×</em> Bread.co.uk</h1>
+        <p class="lede">A pilot partnership to give your NPD team back what they've lost most — the time to create.</p>
+      </div>
+      <div class="title-meta">
+        <div class="col">
+          <span class="col-label">Prepared for</span>
+          <span class="col-value">Renata</span>
+        </div>
+        <div class="col">
+          <span class="col-label">Presented by</span>
+          <span class="col-value">Aurimas Prakapas · Founder</span>
+        </div>
+        <div class="col">
+          <span class="col-label">Document</span>
+          <span class="col-value">SCAN-PARTNERSHIP-01</span>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Scanerrific LTD · London</span>
+      <span>01 / 20</span>
+    </div>
+  </section>
+
+  <!-- 02 · VISION STATEMENT -->
+  <section class="slide statement-slide" data-slide="2">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.02 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="statement-mark">A note before we begin</div>
+      <p class="statement">Every product that changes an aisle starts as a sample <em>on a bench.</em></p>
+      <p class="statement-sub">Everything else — the chaos, the inbox, the spreadsheets, the 11pm texts — is what we've come to accept in the space between the idea and the shelf.</p>
+    </div>
+    <div class="slide-footer">
+      <span>Before we begin</span>
+      <span>02 / 20</span>
+    </div>
+  </section>
+
+  <!-- 03 · THE REALITY -->
+  <section class="slide" data-slide="3">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.03 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">03</span>
+        <span class="eyebrow-rule"></span>
+        <span>The reality</span>
+      </div>
+      <h2 class="headline">You didn't get into NPD to <em>chase emails.</em></h2>
+      <div class="two-col">
+        <p class="body-text">You got into it to develop products people actually want to eat. But somewhere between the ingredient brief and the retailer sign-off, most of your team's day disappears into work that isn't the work.</p>
+        <ul class="feature-list">
+          <li>Copy-pasting sample requests from Outlook to Excel</li>
+          <li>Chasing suppliers for materials that should've arrived last Tuesday</li>
+          <li>Rebuilding the same shelf-life report from scratch, again</li>
+          <li>Explaining, again, why the trial slipped a week</li>
+          <li>11pm texts because someone remembered a sample expires tomorrow</li>
+        </ul>
+      </div>
+      <p class="caption">This isn't a criticism. This is what every bakery NPD team we've spoken to lives with — from artisan producers to multinational manufacturers.</p>
+    </div>
+    <div class="slide-footer">
+      <span>The Reality</span>
+      <span>03 / 20</span>
+    </div>
+  </section>
+
+  <!-- 04 · WHAT IF -->
+  <section class="slide statement-slide" data-slide="4">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.04 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">04</span>
+        <span class="eyebrow-rule"></span>
+        <span>A different question</span>
+      </div>
+      <p class="statement">What if it felt <em>different?</em></p>
+      <p class="statement-sub">What if the workflow you imagined when you took the job — was the workflow you actually had on Monday?</p>
+    </div>
+    <div class="slide-footer">
+      <span>What If</span>
+      <span>04 / 20</span>
+    </div>
+  </section>
+
+  <!-- 05 · SCANERRIFIC -->
+  <section class="slide" data-slide="5">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.05 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">05</span>
+        <span class="eyebrow-rule"></span>
+        <span>This is Scanerrific</span>
+      </div>
+      <h2 class="headline">One platform. Your team. Your recipes. Your samples. Your buyers. <em>One thread.</em></h2>
+      <div class="two-col">
+        <div>
+          <p class="body-text">Not another ERP. Not a spreadsheet with a login. A working environment built specifically for the way bakery NPD teams develop, sample, and sign off new products.</p>
+          <p class="body-text" style="margin-top:16px">You keep your existing process. We give it a home — searchable, timestamped, and audit-ready by default.</p>
+        </div>
+        <ul class="feature-list">
+          <li>Ingredient batches with allergen &amp; Halal notes</li>
+          <li>Versioned recipe formulation</li>
+          <li>QR-tracked sample dispatch</li>
+          <li>Automated shelf-life studies</li>
+          <li>AI email parsing — inbox becomes order queue</li>
+          <li>Full traceability, one query away</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>The Solution</span>
+      <span>05 / 20</span>
+    </div>
+  </section>
+
+  <!-- 06 · WORKFLOW -->
+  <section class="slide" data-slide="6">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.06 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">06</span>
+        <span class="eyebrow-rule"></span>
+        <span>The workflow, mapped</span>
+      </div>
+      <h2 class="headline">Six steps. One thread.</h2>
+      <div class="workflow">
+        <div class="step"><span class="step-num">01</span><div class="step-content"><span class="step-title">Raw material intake</span><span class="step-desc">Batches logged with storage, allergen, and supplier notes at goods-in.</span></div></div>
+        <div class="step"><span class="step-num">02</span><div class="step-content"><span class="step-title">Recipe formulation</span><span class="step-desc">Versioned recipes linked to materials. Every tweak, a snapshot.</span></div></div>
+        <div class="step"><span class="step-num">03</span><div class="step-content"><span class="step-title">Trial batch</span><span class="step-desc">Stock deducted automatically. Batch traceability built in.</span></div></div>
+        <div class="step"><span class="step-num">04</span><div class="step-content"><span class="step-title">Sample dispatch</span><span class="step-desc">QR-labelled, tracked from cold room to buyer's desk.</span></div></div>
+        <div class="step"><span class="step-num">05</span><div class="step-content"><span class="step-title">Retailer feedback</span><span class="step-desc">Captured against the sample — not lost in an inbox.</span></div></div>
+        <div class="step"><span class="step-num">06</span><div class="step-content"><span class="step-title">Sign-off &amp; reorder</span><span class="step-desc">Full audit trail. PDF-ready for BRCGS or Municipality.</span></div></div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>The Workflow</span>
+      <span>06 / 20</span>
+    </div>
+  </section>
+
+  <!-- 07 · RECIPES -->
+  <section class="slide" data-slide="7">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.07 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">07</span>
+        <span class="eyebrow-rule"></span>
+        <span>Recipes &amp; formulation</span>
+      </div>
+      <h2 class="headline">A single source of truth for <em>what goes in.</em></h2>
+      <div class="two-col">
+        <p class="body-text">Bakery formulations are living documents — tweaked for humidity, seasonality, cost, buyer preference. Scanerrific holds every version, so you can see exactly what changed between v3 and v7 when a retailer asks. Or when someone new joins the team and inherits the project.</p>
+        <ul class="feature-list">
+          <li>Formulations linked to raw materials in inventory</li>
+          <li>Full version history — every iteration a snapshot</li>
+          <li>Stock deducted automatically per trial batch</li>
+          <li>Allergen and Halal notes carried through the chain</li>
+          <li>Recipe codes generated for compliance &amp; labelling</li>
+          <li>Export to CSV or PDF for retailer submissions</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Recipes &amp; Formulation</span>
+      <span>07 / 20</span>
+    </div>
+  </section>
+
+  <!-- 08 · MAGIC ORDERS -->
+  <section class="slide" data-slide="8">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.08 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">08</span>
+        <span class="eyebrow-rule"></span>
+        <span>Magic Orders · AI email parsing</span>
+      </div>
+      <h2 class="headline">Your inbox becomes your <em>order system.</em></h2>
+      <div class="two-col">
+        <p class="body-text">Buyers still email you sample requests in plain English. Scanerrific reads them in 10–30 seconds — extracts the customer, SKU, quantities, delivery date, address — and creates the order in your fulfillment queue. No copy-paste. No re-typing. No data-entry errors.</p>
+        <ul class="feature-list">
+          <li>AI parses emails from any client, in any format</li>
+          <li>Customer, SKU, quantity, delivery, address — extracted</li>
+          <li>Order appears in your fulfillment dashboard instantly</li>
+          <li>10–30 second processing via Microsoft 365</li>
+          <li>Dedicated address per company, multi-tenant routing</li>
+          <li>You approve or reject with one click</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Magic Orders</span>
+      <span>08 / 20</span>
+    </div>
+  </section>
+
+  <!-- 09 · SAMPLES -->
+  <section class="slide" data-slide="9">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.09 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">09</span>
+        <span class="eyebrow-rule"></span>
+        <span>Sample dispatch &amp; tracking</span>
+      </div>
+      <h2 class="headline">Every sample has a QR code <em>and a story.</em></h2>
+      <div class="two-col">
+        <p class="body-text">The bakery sample lifecycle is short and brutal — one lost package can push a retailer trial by weeks, and a fresh bake can't wait. Scanerrific labels every sample at dispatch and follows it until the buyer's feedback lands back on the record.</p>
+        <ul class="feature-list">
+          <li>QR labels in A4, 6×4", and 85×35mm formats</li>
+          <li>Dispatch → arrival → feedback, one thread</li>
+          <li>Inline messaging on every order — no email needed</li>
+          <li>Activity timeline: complete visual history</li>
+          <li>Native iOS &amp; Android app for scanning on the go</li>
+          <li>Address book with pre-filled order forms</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Samples</span>
+      <span>09 / 20</span>
+    </div>
+  </section>
+
+  <!-- 10 · TRIAL PLANNING & SHELF LIFE -->
+  <section class="slide" data-slide="10">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.10 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">10</span>
+        <span class="eyebrow-rule"></span>
+        <span>Trial planning &amp; shelf life</span>
+      </div>
+      <h2 class="headline">Countdown clocks, ready <em>before the auditor asks.</em></h2>
+      <div class="two-col">
+        <p class="body-text">For bakery, shelf life is the whole game — a study that isn't documented is a study that didn't happen. Scanerrific builds the paper trail as you work, not the night before an audit. Trial plans keep you honest about what still needs testing, and by when.</p>
+        <ul class="feature-list">
+          <li>Testing plan templates per product line</li>
+          <li>Shelf-life studies auto-created per new product</li>
+          <li>Test points with Pass / Fail / Under Review status</li>
+          <li>Colour-coded dispose date urgency (Critical / Warning / Recent)</li>
+          <li>PDF shelf-life reports, one click</li>
+          <li>HACCP, BRCGS &amp; UAE Municipality standards supported</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Trial Planning &amp; Shelf Life</span>
+      <span>10 / 20</span>
+    </div>
+  </section>
+
+  <!-- 11 · TRACEABILITY -->
+  <section class="slide" data-slide="11">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.11 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">11</span>
+        <span class="eyebrow-rule"></span>
+        <span>Traceability</span>
+      </div>
+      <h2 class="headline">Where did this batch go? <em>Answered in seconds.</em></h2>
+      <div class="two-col">
+        <p class="body-text">When a retailer calls with a quality question, you don't want to be scrolling folders. Scanerrific traces every batch — from goods-in receipt to sample dispatch to trial outcome — with one query. What used to take three people half a day now takes one person, one search.</p>
+        <ul class="feature-list">
+          <li>Every action logged with user ID + company ID</li>
+          <li>Batch tracking with lot numbers &amp; locations</li>
+          <li>Complete stock logs — additions, removals, recipe use</li>
+          <li>Material usage timeline per ingredient</li>
+          <li>Order &amp; stock change audit trails</li>
+          <li>Storage locations mapped hierarchically</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Traceability</span>
+      <span>11 / 20</span>
+    </div>
+  </section>
+
+  <!-- 12 · SECURITY -->
+  <section class="slide" data-slide="12">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.12 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">12</span>
+        <span class="eyebrow-rule"></span>
+        <span>Security &amp; data isolation</span>
+      </div>
+      <h2 class="headline">Your data is yours. Suppliers see <em>only theirs.</em></h2>
+      <div class="two-col">
+        <p class="body-text">For a multinational operator, cross-company data exposure is a legal problem, not a technical one. Scanerrific was built multi-tenant from day one — every database query is scoped to your company ID, every access logged, and an independent security audit found zero vulnerabilities.</p>
+        <ul class="feature-list">
+          <li>Multi-tenant architecture — zero cross-company exposure</li>
+          <li>Independent security audit passed: zero vulnerabilities</li>
+          <li>5-layer email security with sender verification</li>
+          <li>GDPR-aligned soft deletes &amp; anonymisation</li>
+          <li>Role-based permissions: Owner → Admin → Team</li>
+          <li>Stripe webhook signature verification</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Security</span>
+      <span>12 / 20</span>
+    </div>
+  </section>
+
+  <!-- 13 · MCCORMICK INTRO -->
+  <section class="slide" data-slide="13">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.13 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">13</span>
+        <span class="eyebrow-rule"></span>
+        <span>A working partnership</span>
+      </div>
+      <h2 class="headline">How <em>McCormick</em> is using Scanerrific.</h2>
+      <div class="case-card">
+        <div class="case-brand">
+          <span class="case-tag">Current Partner</span>
+          <div class="case-logo">McCormick</div>
+          <p class="case-desc">One of the world's most recognisable flavour and ingredient houses, with global NPD teams shipping new products across dozens of markets. They use Scanerrific across R&amp;D and sample operations.</p>
+          <div class="case-meta">
+            <div><div class="case-meta-label">Sector</div><div class="case-meta-value">Flavours &amp; Ingredients</div></div>
+            <div><div class="case-meta-label">Scale</div><div class="case-meta-value">Multi-site, Global</div></div>
+            <div><div class="case-meta-label">Live since</div><div class="case-meta-value">2025</div></div>
+            <div><div class="case-meta-label">Modules</div><div class="case-meta-value">Full platform</div></div>
+          </div>
+        </div>
+        <div class="case-uses">
+          <div class="case-use-title">What they use it for</div>
+          <div class="case-use"><span class="case-use-num">01</span><span>Traceability across R&amp;D formulations and sample flows</span></div>
+          <div class="case-use"><span class="case-use-num">02</span><span>NPD management for new SKUs going into retail trials</span></div>
+          <div class="case-use"><span class="case-use-num">03</span><span>Recipe creation with versioning across the innovation team</span></div>
+          <div class="case-use"><span class="case-use-num">04</span><span>Sample inventory with QR-labelled cold-room stock</span></div>
+          <div class="case-use"><span class="case-use-num">05</span><span>Trial planning with shelf-life countdown clocks</span></div>
+          <div class="case-use"><span class="case-use-num">06</span><span>AI email parsing for incoming buyer sample requests</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Case Study · McCormick</span>
+      <span>13 / 20</span>
+    </div>
+  </section>
+
+  <!-- 14 · MCCORMICK RESULTS -->
+  <section class="slide" data-slide="14">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.14 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">14</span>
+        <span class="eyebrow-rule"></span>
+        <span>Results reported by the team</span>
+      </div>
+      <h2 class="headline">What changed after go-live.</h2>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-num">~12<span class="unit">h</span></div>
+          <div class="metric-label">Reclaimed per NPD team member, per week</div>
+        </div>
+        <div class="metric">
+          <div class="metric-num"><span class="sign">−</span>50<span class="unit">%</span></div>
+          <div class="metric-label">Fewer sample re-shipments (lost, wrong, expired)</div>
+        </div>
+        <div class="metric">
+          <div class="metric-num"><span class="sign">+</span>40<span class="unit">%</span></div>
+          <div class="metric-label">Faster from brief to first sample dispatch</div>
+        </div>
+        <div class="metric">
+          <div class="metric-num">0</div>
+          <div class="metric-label">Audit prep overtime — reports built as work happens</div>
+        </div>
+      </div>
+      <p class="caption" style="margin-top:32px">Figures reported by the McCormick NPD operations team, comparing pre- and post-Scanerrific workflows over the first 6 months of use.</p>
+    </div>
+    <div class="slide-footer">
+      <span>Results</span>
+      <span>14 / 20</span>
+    </div>
+  </section>
+
+  <!-- 15 · MEET NIKOLAY -->
+  <section class="slide" data-slide="15">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.15 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">15</span>
+        <span class="eyebrow-rule"></span>
+        <span>The human bridge</span>
+      </div>
+      <div class="person-card">
+        <div class="person-avatar">NE</div>
+        <div class="person-details">
+          <div>
+            <div class="person-name">Nikolay Ermakov</div>
+            <div class="person-role" style="margin-top:8px">Strategic Advisor & Stakeholder, Scanerrific
+Decades in global R&D and NPD</div>
+          </div>
+          <p class="person-bio">Nikolay brings decades of hands-on leadership across global R&D, NPD, and commercial operations in food manufacturing. He joined Scanerrific as a strategic advisor and stakeholder because he's seen, from inside the industry, how the wrong workflows cost teams their best years — and he's here to make sure we build the tool he wishes he'd had.</p>
+          <p class="person-bio">For your pilot, Nikolay joins the working calls. He's the shortcut between where you are today and where McCormick's team got to twelve months in.</p>
+          <p class="person-bio">In almost 40 years in industry, he's seen it first-hand: most NPD teams absorb one aborted factory trial every 12–18 months. They just don't call it that. That's exactly what Scanerrific is built to prevent.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Meet Nikolay</span>
+      <span>15 / 20</span>
+    </div>
+  </section>
+
+  <!-- 16 · NIKOLAY QUOTE -->
+  <section class="slide quote-slide" data-slide="16">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.16 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="quote-block">
+        <p class="quote-text">"After decades running R&D and NPD teams, I've watched brilliant people burn hours on the wrong problems. Scanerrific is the first tool I've seen built for the real work of this industry — that's why I joined."</p>
+        <div class="quote-attr">
+          <strong>Nikolay Ermakov</strong>
+          Strategic Advisor & Stakeholder, Scanerrific
+Decades in global R&D and NPD
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>In His Words</span>
+      <span>16 / 20</span>
+    </div>
+  </section>
+
+  <!-- 17 · ROI MATH -->
+  <section class="slide" data-slide="17">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.17 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">17</span>
+        <span class="eyebrow-rule"></span>
+        <span>The business case</span>
+      </div>
+      <h2 class="headline" style="margin-bottom:8px">The first prevented incident pays for years.</h2>
+      <div class="risk-frame">
+        <div class="risk-panel proof">
+          <div class="risk-panel-label">McCormick · Steady state today</div>
+          <ul class="risk-list">
+            <li>5+ trials per week, running to schedule</li>
+            <li>Sample loss: 1–2 per two months (was routine before)</li>
+            <li>Project delays: effectively eliminated</li>
+            <li>Audit prep: no overtime — reports built in real time</li>
+          </ul>
+          <div class="risk-panel-caption">This is what steady state looks like on Scanerrific.</div>
+        </div>
+        <div class="risk-panel exposure">
+          <div class="risk-panel-label">Without a system · Typical industry exposure</div>
+          <table class="incident-table">
+            <thead>
+              <tr>
+                <th>Incident</th>
+                <th>Typical cost range</th>
+                <th>Frequency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Lost / expired sample, remade</td>
+                <td>£500–£2,000</td>
+                <td>Weekly</td>
+              </tr>
+              <tr>
+                <td>Retailer trial slipped by one week</td>
+                <td>£5,000–£20,000</td>
+                <td>Monthly</td>
+              </tr>
+              <tr>
+                <td>Aborted factory trial (line time, changeover, materials)</td>
+                <td>£40,000–£150,000+</td>
+                <td>1–3× per year</td>
+              </tr>
+              <tr>
+                <td>Failed audit / late compliance response</td>
+                <td>£10,000+ in overtime</td>
+                <td>Quarterly pressure</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="risk-bottom">
+        <div class="risk-callout">
+          <span class="risk-price">£199 / month</span>
+          <span class="risk-vs">vs</span>
+          <span class="risk-incident">any single incident above</span>
+        </div>
+        <p class="risk-quote">“You don’t need us to save you £150,000. You need us to make sure the £150,000 trial doesn’t get aborted because someone couldn’t find the approved sample.”</p>
+      </div>
+      <p class="risk-disclaimer">Ranges reflect widely-cited industry cost bands for bakery and food manufacturing NPD. Your operation’s exposure depends on volume, retailer commitments, and trial complexity. Scanerrific does not guarantee prevention — but every workflow it replaces is a workflow where these incidents originate.</p>
+    </div>
+    <div class="slide-footer">
+      <span>The Business Case</span>
+      <span>17 / 20</span>
+    </div>
+  </section>
+
+  <!-- 18 · THE TRANSFORMATION (Before/After + Wins) -->
+  <section class="slide" data-slide="18">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.18 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">18</span>
+        <span class="eyebrow-rule"></span>
+        <span>The transformation</span>
+      </div>
+      <h2 class="headline" style="margin-bottom:20px">This is what <em>Monday morning</em> looks like.</h2>
+      <div class="split">
+        <div class="split-col before">
+          <div class="split-eyebrow">Monday · Today</div>
+          <ul class="split-list">
+            <li>47 unread emails from buyers, most about sample requests</li>
+            <li>Spreadsheet A vs Spreadsheet B — which is current?</li>
+            <li>A sample went out Friday. Did it arrive? No-one's sure.</li>
+            <li>Retailer chasing shelf-life data for a study you haven't finalised</li>
+            <li>Compliance report due Friday. Nothing built yet.</li>
+            <li>Two of the team are on WhatsApp, chasing a supplier.</li>
+          </ul>
+        </div>
+        <div class="split-col after">
+          <div class="split-eyebrow">Monday · With Scanerrific</div>
+          <ul class="split-list">
+            <li>Buyer emails already parsed into your order queue</li>
+            <li>One recipe. One version. One truth.</li>
+            <li>Every sample scannable, tracked, timestamped</li>
+            <li>Shelf-life countdowns visible at a glance</li>
+            <li>Compliance report ready to export as PDF</li>
+            <li>Your team is doing NPD. Not chasing NPD.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="wins">
+        <div class="win">
+          <span class="win-tag">Competitive</span>
+          <span class="win-title">Launch faster.</span>
+          <span class="win-desc">Ship the SKU your competitor is still sampling. Retailer meetings become opportunities, not deadlines.</span>
+        </div>
+        <div class="win">
+          <span class="win-tag">Environmental</span>
+          <span class="win-title">Lighter footprint.</span>
+          <span class="win-desc">Fewer courier re-shipments. Fewer expired samples in landfill. Real ESG numbers to report.</span>
+        </div>
+        <div class="win">
+          <span class="win-tag">Human</span>
+          <span class="win-title">Calmer team.</span>
+          <span class="win-desc">NPD stops chasing. Starts creating. The reason you hired them in the first place.</span>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>The Transformation</span>
+      <span>18 / 20</span>
+    </div>
+  </section>
+
+  <!-- 19 · THE PILOT -->
+  <section class="slide" data-slide="19">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.19 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">19</span>
+        <span class="eyebrow-rule"></span>
+        <span>How we begin</span>
+      </div>
+      <h2 class="headline">Three months. Founder in the room. Nikolay on the calls. <em>No commitment after.</em></h2>
+      <ul class="feature-list" style="max-width:66ch">
+        <li>Full platform access — no feature restrictions</li>
+        <li>Onboarding session led personally by Aurimas</li>
+        <li>Data import from your existing spreadsheets — done by us</li>
+        <li>Weekly working call with the founder + Nikolay</li>
+        <li>Success criteria agreed together in week one</li>
+        <li>Walk away after 90 days, or continue at the same rate</li>
+      </ul>
+      <div class="price-card">
+        <div class="price"><sup>£</sup>199<span style="font-size:22px;color:var(--muted);font-weight:400;margin-left:8px">/ month</span></div>
+        <div class="price-detail">
+          <strong>90-day partnership pilot</strong>
+          £2388 Yearly · billed monthly/yearly<br>
+          Cancel anytime · no auto-renewal
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>The Pilot</span>
+      <span>19 / 20</span>
+    </div>
+  </section>
+
+  <!-- 20 · LET'S BEGIN -->
+  <section class="slide" data-slide="20">
+    <div class="slide-header">
+      <span class="brand">Scanerrific</span>
+      <span class="batch">Batch.20 / 20</span>
+    </div>
+    <div class="slide-body">
+      <div class="eyebrow">
+        <span class="eyebrow-num">20</span>
+        <span class="eyebrow-rule"></span>
+        <span>Let's begin</span>
+      </div>
+      <h1 class="display">The best partnerships start <em>with a first week.</em></h1>
+      <p class="lede">Four steps between this conversation and your team's first calm Monday.</p>
+      <div class="workflow" style="margin-top:32px">
+        <div class="step"><span class="step-num">01</span><div class="step-content"><span class="step-title">Kickoff call</span><span class="step-desc">30 minutes. Scope, timeline, and who's in the room.</span></div></div>
+        <div class="step"><span class="step-num">02</span><div class="step-content"><span class="step-title">Data import</span><span class="step-desc">We pull your existing spreadsheets in. No busywork on your team.</span></div></div>
+        <div class="step"><span class="step-num">03</span><div class="step-content"><span class="step-title">Team onboarding</span><span class="step-desc">One session with the NPD team. Live product, real data.</span></div></div>
+        <div class="step"><span class="step-num">04</span><div class="step-content"><span class="step-title">Week 1 review</span><span class="step-desc">First working call with Aurimas &amp; Nikolay. Tune and go.</span></div></div>
+      </div>
+      <div class="contact">
+        <div>
+          <div class="contact-label">Founder</div>
+          <div class="contact-value">Aurimas Prakapas<br>aurimas@scanerrific.com</div>
+        </div>
+        <div>
+          <div class="contact-label">Company</div>
+          <div class="contact-value">Scanerrific LTD<br>128 City Road, London EC1V 2NX</div>
+        </div>
+        <div>
+          <div class="contact-label">Registered</div>
+          <div class="contact-value">England &amp; Wales · No. 13681978<br>scanerrific.com</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Let's Begin</span>
+      <span>20 / 20</span>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prev">← Prev</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">01 / 20</span>
+  <button class="nav-btn" id="next">Next →</button>
+  <span class="nav-sep"></span>
+  <button class="nav-btn" id="printBtn">PDF</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  const dotsEl = document.getElementById('dots');
+  const counterEl = document.getElementById('counter');
+  const progressEl = document.getElementById('progress');
+  let current = 0;
+
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => go(i));
+    dotsEl.appendChild(d);
+  }
+  const dots = dotsEl.querySelectorAll('.dot');
+
+  function go(idx) {
+    if (idx < 0 || idx >= total) return;
+    const dir = idx > current ? 'forward' : 'backward';
+    slides[current].classList.remove('active', 'forward', 'backward');
+    current = idx;
+    const s = slides[current];
+    s.classList.remove('forward', 'backward');
+    void s.offsetWidth; // force reflow — restarts CSS animation
+    s.classList.add('active', dir);
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+    counterEl.textContent = String(current + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+    progressEl.style.setProperty('--pct', ((current + 1) / total * 100) + '%');
+  }
+
+  document.getElementById('prev').addEventListener('click', () => go(current - 1));
+  document.getElementById('next').addEventListener('click', () => go(current + 1));
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); go(0); }
+    if (e.key === 'End') { e.preventDefault(); go(total - 1); }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.nav')) return;
+    const w = window.innerWidth;
+    if (e.clientX > w * 0.65) go(current + 1);
+    else if (e.clientX < w * 0.35) go(current - 1);
+  });
+
+  progressEl.style.setProperty('--pct', (1 / total * 100) + '%');
+</script>
+
+</body>
+</html>
